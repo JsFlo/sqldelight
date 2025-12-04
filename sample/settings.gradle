@@ -65,5 +65,6 @@ includeBuild('..') {
     substitute module("app.cash.sqldelight:compiler-env") using project(":sqldelight-compiler:environment")
     substitute module("app.cash.sqldelight:migration-env") using project(":sqlite-migrations:environment")
     substitute module("app.cash.sqldelight:async-extensions") using project(":extensions:async-extensions")
+    substitute module("app.cash.sqldelight:coroutines-extensions") using project(":extensions:coroutines-extensions")
   }
 }

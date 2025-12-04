@@ -1,0 +1,51 @@
+-- Minimal schema + queries to reproduce a crash caused by a race
+-- between reading rows and deleting them while using SQLDelight.
+
+-- User table definition
+CREATE TABLE IF NOT EXISTS User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+-- The important part for the repro is the `selectAll` query below.
+-- Because `id` and `name` are declared NOT NULL, SQLDelight generates
+-- a Kotlin mapper that looks like:
+--
+-- "SELECT User.id, User.name FROM User") { cursor ->
+--    mapper(
+--      cursor.getLong(0)!!,
+--      cursor.getString(1)!!
+--    )
+--  }
+--
+-- In the sample app, `selectAll` is observed as a Flow
+-- (selectAll().asFlow().mapToList(...).collect { ... }) while another
+-- coroutine is deleting random rows.
+--
+-- Under this concurrent read/delete pattern, the generated mapper can
+-- sometimes see `null` from the cursor.get{Type} for one of these columns and
+-- crash with an NPE at the `!!`.
+--
+-- You get this message "Failed to read row 1285, column 0 from a window with 1285 rows, 2 columns"
+-- and exception:
+-- FATAL EXCEPTION: main
+--   Process: com.example.testsqldelight, PID: 11488
+--   java.lang.NullPointerException
+--   at com.example.testsqldelight.database.UserQueries.selectAll$lambda$0(UserQueries.kt:)
+selectAll:
+SELECT * FROM User;
+
+-- Hack: in this example I'm forcing the generated code to not have !! which stops the app from crashing
+-- but you still get a log about "Failed to read row 1285, column 0 from a window with 1285 rows, 2 columns"
+selectAllWithHackNullableFields:
+SELECT
+    CAST(CASE WHEN id IS NULL THEN NULL ELSE id END AS INTEGER) AS nullable_id,
+    CAST(CASE WHEN name IS NULL THEN NULL ELSE name END AS TEXT) AS nullable_name
+FROM User;
+
+insertUser:
+INSERT INTO User(name)
+VALUES (?);
+
+deleteUser:
+DELETE FROM User WHERE id = ?;

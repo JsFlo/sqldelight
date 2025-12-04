@@ -16,5 +16,8 @@ class MainActivity : Activity() {
     findViewById<Button>(R.id.teams).setOnClickListener {
       startActivity(Intent(this, TeamsActivity::class.java))
     }
+    findViewById<Button>(R.id.bug_repro).setOnClickListener {
+      startActivity(Intent(this, BugReproActivity::class.java))
+    }
   }
 }

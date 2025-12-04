@@ -19,6 +19,7 @@
     </activity>
     <activity android:name=".ui.PlayersActivity" />
     <activity android:name=".ui.TeamsActivity" />
+    <activity android:name=".ui.BugReproActivity" />
 
   </application>
 </manifest>
